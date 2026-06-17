@@ -4,21 +4,21 @@
   <meta charset="utf-8">
   
   
-  <title>从零独立完成一个学习助手项目：StudyApp 开发复盘 | Hexo</title>
+  <title>独立完成 StudyApp：一个从需求重构到多用户隔离的学习助手项目复盘 | 罗添壤的技术博客</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="description" content="记录我使用 Codex 与 DeepSeek V4 Pro 辅助，独立完成 StudyApp 在线学习工具的完整过程，包括产品重构、JWT 登录、多用户隔离、后台管理与排错复盘。">
+  <meta name="description" content="记录我使用 Codex 与 DeepSeek V4 Pro 辅助，独立完成 StudyApp 在线学习工具的全过程，重点包括产品重构、FastAPI 后端、JWT 登录、多用户数据隔离、后台管理与真实排错经验。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="从零独立完成一个学习助手项目：StudyApp 开发复盘">
+<meta property="og:title" content="独立完成 StudyApp：一个从需求重构到多用户隔离的学习助手项目复盘">
 <meta property="og:url" content="https://luotianrang.github.io/2026/06/17/studyapp-project-review/index.html">
-<meta property="og:site_name" content="Hexo">
-<meta property="og:description" content="记录我使用 Codex 与 DeepSeek V4 Pro 辅助，独立完成 StudyApp 在线学习工具的完整过程，包括产品重构、JWT 登录、多用户隔离、后台管理与排错复盘。">
+<meta property="og:site_name" content="罗添壤的技术博客">
+<meta property="og:description" content="记录我使用 Codex 与 DeepSeek V4 Pro 辅助，独立完成 StudyApp 在线学习工具的全过程，重点包括产品重构、FastAPI 后端、JWT 登录、多用户数据隔离、后台管理与真实排错经验。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-06-17T12:00:00.000Z">
 <meta property="article:modified_time" content="2026-06-17T12:00:00.000Z">
 <meta property="article:author" content="罗添壤">
 <meta name="twitter:card" content="summary">
   
-    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+    <link rel="alternate" href="/atom.xml" title="罗添壤的技术博客" type="application/atom+xml">
   
   
     <link rel="shortcut icon" href="/favicon.png">
@@ -45,7 +45,7 @@
   <div id="header-outer" class="outer">
     <div id="header-title" class="inner">
       <h1 id="logo-wrap">
-        <a href="/" id="logo">Hexo</a>
+        <a href="/" id="logo">罗添壤的技术博客</a>
       </h1>
       
     </div>
@@ -87,7 +87,7 @@
         
   
     <h1 class="p-name article-title" itemprop="headline name">
-      从零独立完成一个学习助手项目：StudyApp 开发复盘
+      独立完成 StudyApp：一个从需求重构到多用户隔离的学习助手项目复盘
     </h1>
   
 
@@ -95,111 +95,119 @@
     
     <div class="e-content article-entry" itemprop="articleBody">
       
-        <p>最近我完成了一个自己的在线学习工具项目 <strong>StudyApp</strong>。这个项目并不是简单做一个前端页面或者单独写几个接口，而是从产品思路、数据结构、前后端联动，到用户登录、学习计划、后台管理、知识点导入和 bug 修复，完整走了一遍真正的项目开发流程。</p>
-<p>这篇文章想系统记录一下这个项目是怎么做出来的，我做了什么决定，踩了哪些坑，又是怎么一点点把项目从“能跑”推进到“更像一个完整产品”的。</p>
-<h2 id="项目定位"><a href="#项目定位" class="headerlink" title="项目定位"></a>项目定位</h2><p>StudyApp 是一个“预设书库 + 我的学习”的在线学习工具。</p>
-<p>它的核心思路不是让用户上传一本书之后临时分析，而是由管理员提前整理好书籍、章节和知识点，用户进入系统后可以直接浏览书库，把感兴趣的内容加入自己的学习列表，再根据内容生成学习计划并按天学习。</p>
-<p>项目目前的完整业务流是：</p>
+        <p>最近我独立完成了一个在线学习工具项目 <strong>StudyApp</strong>。这个项目基于 <strong>FastAPI + SQLite + 原生 HTML/CSS/JS</strong> 开发，核心围绕“预设书库、我的学习、学习计划、后台管理”展开。整个开发过程中，我在 Codex 和 DeepSeek V4 Pro 的辅助下完成需求拆解、功能实现、结构重构与 bug 排查，但项目设计、取舍和落地都由我个人独立推进。</p>
+<p>这篇文章既是一次项目复盘，也是一份比较完整的阶段性总结。我想重点记录三件事：</p>
 <ol>
-<li>用户注册或登录</li>
-<li>浏览预设书库</li>
-<li>加入“我的学习”</li>
-<li>生成学习计划</li>
-<li>每天学习并标记完成</li>
+<li>这个项目为什么这样设计</li>
+<li>我具体完成了哪些核心模块</li>
+<li>它体现了我哪些工程能力和问题解决能力</li>
 </ol>
-<p>从产品角度看，这个项目更接近一个真正能继续扩展的学习平台，而不是一次性的功能 demo。</p>
-<h2 id="技术栈"><a href="#技术栈" class="headerlink" title="技术栈"></a>技术栈</h2><p>这个项目采用的是比较轻量但完整的一套技术栈：</p>
+<h2 id="一、项目背景：我想做的不是“演示页”，而是一个能跑通流程的小产品"><a href="#一、项目背景：我想做的不是“演示页”，而是一个能跑通流程的小产品" class="headerlink" title="一、项目背景：我想做的不是“演示页”，而是一个能跑通流程的小产品"></a>一、项目背景：我想做的不是“演示页”，而是一个能跑通流程的小产品</h2><p>我一开始并不想只做一个静态前端页面，或者写几个独立接口做技术展示，而是想做一个真正有用户路径的学习工具。</p>
+<p>最终我把 StudyApp 的业务流程设计成下面这样：</p>
+<ol>
+<li>用户注册 / 登录</li>
+<li>浏览预设书库</li>
+<li>把书加入“我的学习”</li>
+<li>生成学习计划</li>
+<li>按天学习并标记完成</li>
+</ol>
+<p>从这个流程可以看出，我想做的是一个有“内容、用户、计划、进度”完整闭环的小型产品，而不是单点功能 demo。</p>
+<h2 id="二、技术栈：选轻量方案，但把关键链路做完整"><a href="#二、技术栈：选轻量方案，但把关键链路做完整" class="headerlink" title="二、技术栈：选轻量方案，但把关键链路做完整"></a>二、技术栈：选轻量方案，但把关键链路做完整</h2><p>这个项目我采用的是一套比较轻量但完整的技术栈：</p>
 <ul>
 <li>后端：Python + FastAPI</li>
 <li>数据库：SQLite</li>
-<li>前端：原生 HTML / CSS / JavaScript 单页应用</li>
+<li>前端：原生 HTML / CSS / JavaScript SPA</li>
 <li>认证：JWT（python-jose + bcrypt）</li>
 <li>数据导入：DOCX 解析</li>
 </ul>
-<p>我刻意没有一上来就套用复杂框架，而是选择用更直接的方式把业务真正跑通。这样做的好处是，我能更清楚地理解每个模块之间是如何协作的，而不是依赖脚手架帮我隐藏细节。</p>
-<h2 id="从“上传分析”到“预设书库”"><a href="#从“上传分析”到“预设书库”" class="headerlink" title="从“上传分析”到“预设书库”"></a>从“上传分析”到“预设书库”</h2><p>这个项目中我觉得最重要的一次产品决策，是把原来的“上传书籍分析”方案彻底重构成“预设书库”模式。</p>
-<p>最初的想法是让用户上传 PDF，然后系统自动分析内容并生成学习数据。但实际推进时我发现两个问题：</p>
+<p>我没有一开始就上更重的框架，而是优先保证自己能真正理解每一层是怎么工作的。对我来说，这种方式更适合练习接口设计、数据库建模、前后端联调和实际排错。</p>
+<h2 id="三、最关键的一次产品决策：从“上传分析”重构为“预设书库”"><a href="#三、最关键的一次产品决策：从“上传分析”重构为“预设书库”" class="headerlink" title="三、最关键的一次产品决策：从“上传分析”重构为“预设书库”"></a>三、最关键的一次产品决策：从“上传分析”重构为“预设书库”</h2><p>这个项目里，我觉得最有价值的一次决策不是写了哪个功能，而是主动推翻了原来的方案。</p>
+<p>最早的思路是让用户上传 PDF，系统再去分析内容并生成学习数据。但我很快发现两个问题：</p>
 <ul>
 <li>分析速度慢</li>
-<li>生成质量不稳定</li>
+<li>结果质量不稳定</li>
 </ul>
-<p>这两个问题直接影响用户体验。如果一个学习工具在最开始的导入阶段就又慢又不稳定，那后面所有功能都会失去意义。</p>
-<p>所以我做了比较彻底的调整：</p>
+<p>如果一个学习工具连最开始的导入都做不好，后面再多功能也很难成立。所以我决定做一次明确的产品重构，把模式改成“预设书库”。这次调整包括：</p>
 <ul>
-<li>删除上传书籍功能及相关页面</li>
+<li>删除上传书籍功能和相关页面</li>
 <li>新增“我的学习”页面，并设为默认首页</li>
-<li>重写书库页面，改成纯预设书籍展示</li>
-<li>新增 UserBook 模型与相关 API，支持用户加入学习和移除学习</li>
-<li>保留知识点查询能力，把重点放回学习流程本身</li>
+<li>重写书库页面，改为纯预设书展示</li>
+<li>新增 UserBook 模型和 API，支持加入学习 / 移除学习 / 列表查询</li>
+<li>保留知识点查询能力，把重点转回学习流程本身</li>
 </ul>
-<p>这次重构让我更清楚地理解了一件事：做项目时，不是功能越多越好，而是要围绕“真正可用”来做取舍。</p>
-<h2 id="我完成了哪些核心模块"><a href="#我完成了哪些核心模块" class="headerlink" title="我完成了哪些核心模块"></a>我完成了哪些核心模块</h2><h3 id="1-用户注册与登录"><a href="#1-用户注册与登录" class="headerlink" title="1. 用户注册与登录"></a>1. 用户注册与登录</h3><p>为了让项目真正具备多用户能力，我实现了完整的 JWT 登录体系：</p>
+<p>这次重构让我很直观地意识到，做项目时不能只想着“把功能堆上去”，而是要围绕“是否真的可用”做取舍。这其实也是工程思维里非常重要的一部分。</p>
+<h2 id="四、我独立完成的核心模块"><a href="#四、我独立完成的核心模块" class="headerlink" title="四、我独立完成的核心模块"></a>四、我独立完成的核心模块</h2><h3 id="1-用户注册、登录与鉴权流程"><a href="#1-用户注册、登录与鉴权流程" class="headerlink" title="1. 用户注册、登录与鉴权流程"></a>1. 用户注册、登录与鉴权流程</h3><p>为了让项目不再是“单人演示模式”，我实现了完整的用户认证流程：</p>
 <ul>
 <li>注册接口</li>
 <li>登录接口</li>
 <li>获取当前用户信息接口</li>
-<li>前端登录注册页面</li>
-<li>Token 鉴权流程</li>
+<li>前端登录 / 注册页面</li>
+<li>JWT Token 鉴权</li>
 </ul>
-<p>这部分看起来是基础功能，但它决定了后续所有学习数据是否能真正属于“不同的人”。</p>
-<h3 id="2-全-API-user-id-隔离"><a href="#2-全-API-user-id-隔离" class="headerlink" title="2. 全 API user_id 隔离"></a>2. 全 API user_id 隔离</h3><p>这是我在项目里很重视的一次后端改造。</p>
-<p>在早期版本里，部分数据逻辑默认使用固定 user_id=1，这意味着不同用户之间的数据其实没有完全隔离。后来我把这部分彻底改掉了：</p>
+<p>这部分虽然属于基础能力，但它决定了整个系统是否具备真正的多用户使用前提。</p>
+<h3 id="2-学习计划与用户数据隔离"><a href="#2-学习计划与用户数据隔离" class="headerlink" title="2. 学习计划与用户数据隔离"></a>2. 学习计划与用户数据隔离</h3><p>我在这个项目里比较重视的一次后端改造，是把原本写死的用户逻辑彻底改成了按用户隔离的数据流。</p>
+<p>之前某些功能默认使用固定的 <code>user_id = 1</code>，这样会导致不同用户之间的数据边界不清晰。后来我完成了这几项改造：</p>
 <ul>
-<li>给 StudyPlan 和 NotificationSetting 增加 user_id 字段</li>
-<li>让 plan.py 所有端点都接入 get_current_user</li>
-<li>创建计划时写入 user_id，查询计划时按用户过滤</li>
-<li>通知设置按 user_id 隔离</li>
-<li>数据库加入自动迁移逻辑，避免改表时丢数据</li>
+<li>为 <code>StudyPlan</code> 和 <code>NotificationSetting</code> 添加 <code>user_id</code> 字段</li>
+<li>让 <code>plan.py</code> 所有端点统一接入 <code>get_current_user()</code></li>
+<li>创建计划时写入当前用户 ID，列表查询时按用户过滤</li>
+<li>通知设置按用户隔离</li>
+<li>在数据库初始化中加入自动迁移逻辑，避免改表时丢数据</li>
 </ul>
-<p>这一部分的意义不只是“功能修复”，而是让我第一次比较完整地处理了一个项目中的数据权限边界问题。</p>
-<h3 id="3-后台管理与知识点维护"><a href="#3-后台管理与知识点维护" class="headerlink" title="3. 后台管理与知识点维护"></a>3. 后台管理与知识点维护</h3><p>为了让预设书库模式真正可持续，我还做了后台管理相关能力，支持：</p>
+<p>这一部分的意义不只是“功能能用了”，而是我第一次比较完整地处理了多用户系统里的权限边界和数据归属问题。</p>
+<h3 id="3-后台管理：书籍、章节、知识点增删改查"><a href="#3-后台管理：书籍、章节、知识点增删改查" class="headerlink" title="3. 后台管理：书籍、章节、知识点增删改查"></a>3. 后台管理：书籍、章节、知识点增删改查</h3><p>为了让预设书库模式真正可持续，我还做了网页端后台管理，支持：</p>
 <ul>
-<li>书籍增删改查</li>
-<li>章节增删改查</li>
-<li>知识点增删改查</li>
+<li>书籍管理</li>
+<li>章节管理</li>
+<li>知识点管理</li>
 </ul>
-<p>这部分功能的价值在于，项目不再只是展示固定数据，而是具备继续维护内容的能力。换句话说，它更像一个可以被运营和扩展的系统。</p>
-<h3 id="4-DOCX-导入知识图谱"><a href="#4-DOCX-导入知识图谱" class="headerlink" title="4. DOCX 导入知识图谱"></a>4. DOCX 导入知识图谱</h3><p>项目里我还实现了 DOCX 内容导入，用来批量整理章节与知识点结构。</p>
-<p>目前已经导入的数据包括《高等数学（下册）》知识图谱，共 5 章、50 个知识点。这一步让我更接近“真实数据入库”的场景，而不是只在页面里手写几条假数据演示。</p>
-<h2 id="开发过程中印象最深的几个坑"><a href="#开发过程中印象最深的几个坑" class="headerlink" title="开发过程中印象最深的几个坑"></a>开发过程中印象最深的几个坑</h2><p>这个项目里我不只是在写功能，也花了很多时间处理真实开发里常见但很麻烦的问题。下面几个坑让我印象特别深。</p>
-<h3 id="1-api-js-里有-10-个接口地址写错"><a href="#1-api-js-里有-10-个接口地址写错" class="headerlink" title="1. api.js 里有 10 个接口地址写错"></a>1. api.js 里有 10 个接口地址写错</h3><p>问题现象是接口 404，或者参数明明传了却接收不到。排查后发现原因很典型：URL 写成了正则字面量，而不是模板字符串。</p>
-<p>这个问题涉及 addToMyLearning、getBook、getPlan、deletePlan 等多个方法。修复方式虽然不复杂，但它提醒我，前后端联调时最怕的往往不是大逻辑，而是这些基础但隐蔽的细节错误。</p>
-<h3 id="2-Python-引号转义和相对导入错误"><a href="#2-Python-引号转义和相对导入错误" class="headerlink" title="2. Python 引号转义和相对导入错误"></a>2. Python 引号转义和相对导入错误</h3><p>我遇到过 `SyntaxError: unexpected character after line continuation character`，原因是文件里写入了 <code>\&quot;</code> 而不是正常的双引号。</p>
-<p>另外还有 analysis.py 的相对导入错误，导致出现 <code>ImportError: attempted relative import</code>。这些问题都不是业务层面的 bug，但会直接让项目跑不起来。</p>
-<h3 id="3-start-bat-乱码与-LF-CRLF-问题"><a href="#3-start-bat-乱码与-LF-CRLF-问题" class="headerlink" title="3. start.bat 乱码与 LF/CRLF 问题"></a>3. start.bat 乱码与 LF/CRLF 问题</h3><p>这部分是我以前不太会注意，但这次真正踩到的 Windows 兼容问题。</p>
-<p>我遇到过两个很具体的现象：</p>
+<p>这意味着项目不再只是固定展示几条静态数据，而是具备继续维护和扩展内容的能力。从结构上看，这个项目已经更像一个可以持续迭代的小系统。</p>
+<h3 id="4-DOCX-知识图谱导入"><a href="#4-DOCX-知识图谱导入" class="headerlink" title="4. DOCX 知识图谱导入"></a>4. DOCX 知识图谱导入</h3><p>项目里我还实现了 DOCX 内容导入，用于批量整理书籍章节与知识点数据。</p>
+<p>目前已经导入《高等数学（下册）》知识图谱，共 <strong>5 章、50 个知识点</strong>。这一步让我把项目推进到了更真实的数据处理场景，而不是停留在手写几条 mock 数据的层面。</p>
+<h2 id="五、开发过程中最有代表性的几个问题"><a href="#五、开发过程中最有代表性的几个问题" class="headerlink" title="五、开发过程中最有代表性的几个问题"></a>五、开发过程中最有代表性的几个问题</h2><p>我觉得这个项目最有价值的地方之一，是我不是只在“加功能”，而是在不断解决真实开发中会遇到的具体问题。</p>
+<h3 id="1-api-js-中多个接口地址写错"><a href="#1-api-js-中多个接口地址写错" class="headerlink" title="1. api.js 中多个接口地址写错"></a>1. api.js 中多个接口地址写错</h3><p>我遇到过接口 404、参数传不进去的问题。排查之后发现原因并不复杂，但很隐蔽：多个 URL 被写成了正则字面量，而不是模板字符串。</p>
+<p>这类问题让我意识到，前后端联调时很多 bug 不是大逻辑错了，而是很基础但足以让系统失效的细节问题。</p>
+<h3 id="2-Python-引号转义与相对导入错误"><a href="#2-Python-引号转义与相对导入错误" class="headerlink" title="2. Python 引号转义与相对导入错误"></a>2. Python 引号转义与相对导入错误</h3><p>我也处理过比较典型的后端报错，比如：</p>
 <ul>
-<li>批处理双击后中文乱码</li>
-<li>因为行尾是 LF 而不是 CRLF，命令被拆碎执行，出现奇怪报错</li>
+<li><code>SyntaxError: unexpected character after line continuation character</code></li>
+<li><code>ImportError: attempted relative import</code></li>
 </ul>
-<p>最后通过无 BOM 写入和强制使用 <code>\r\n</code> 行尾解决了。这种问题虽然不“高级”，但特别考验耐心和细节。</p>
-<h3 id="4-页面结构错误导致整体滚动失效"><a href="#4-页面结构错误导致整体滚动失效" class="headerlink" title="4. 页面结构错误导致整体滚动失效"></a>4. 页面结构错误导致整体滚动失效</h3><p>还有一次比较典型的前端 bug，是 index.html 少了一个闭合的 <code>div</code>，导致主内容区嵌套异常，最后整个页面 flex 布局失效、页面滚动也出了问题。</p>
-<p>这个 bug 给我的感受很深，因为它说明前端页面看似“只是少一个标签”，但在布局系统里会放大成整页失效。</p>
-<h2 id="这个项目让我真正学到的东西"><a href="#这个项目让我真正学到的东西" class="headerlink" title="这个项目让我真正学到的东西"></a>这个项目让我真正学到的东西</h2><p>如果只从“我会了什么技术”去总结，这个项目当然让我进一步熟悉了 FastAPI、SQLite、JWT、原生前端和接口联调。</p>
-<p>但更重要的是，我觉得自己在下面几个方面进步明显：</p>
+<p>前者来自错误的引号转义，后者来自相对导入写法不统一。它们都不是业务问题，但会直接影响系统是否能启动，这也逼着我去理解代码结构本身。</p>
+<h3 id="3-start-bat-乱码和-LF-CRLF-兼容问题"><a href="#3-start-bat-乱码和-LF-CRLF-兼容问题" class="headerlink" title="3. start.bat 乱码和 LF/CRLF 兼容问题"></a>3. start.bat 乱码和 LF/CRLF 兼容问题</h3><p>这个问题对我来说很真实，因为它不是算法问题，而是运行环境兼容问题。</p>
+<p>我遇到过：</p>
 <ul>
-<li>更能从产品可用性出发做功能取舍</li>
-<li>更理解多用户系统中的数据隔离逻辑</li>
-<li>更能独立排查前后端联动中的真实 bug</li>
-<li>更能把一个项目从“功能点堆叠”推进到“结构完整”</li>
+<li>批处理文件双击后中文乱码</li>
+<li>因为 LF 行尾导致命令被错误拆分执行</li>
 </ul>
-<p>这也是为什么我认为 StudyApp 对我来说不是一个简单练手项目，而是一次比较完整的工程实践。</p>
-<h2 id="下一步准备继续做什么"><a href="#下一步准备继续做什么" class="headerlink" title="下一步准备继续做什么"></a>下一步准备继续做什么</h2><p>从项目文档来看，后续我还准备继续推进这些能力：</p>
+<p>最后我通过无 BOM 写入和强制使用 <code>\r\n</code> 行尾解决了它。这个过程让我更理解 Windows 环境下脚本执行的细节。</p>
+<h3 id="4-前端结构错误导致整页滚动失效"><a href="#4-前端结构错误导致整页滚动失效" class="headerlink" title="4. 前端结构错误导致整页滚动失效"></a>4. 前端结构错误导致整页滚动失效</h3><p>还有一次前端问题来自一个缺失的闭合 <code>div</code>。看起来只是标签结构小错误，但它直接导致主内容区嵌套异常，最后整个页面的 flex 布局和滚动行为都失效了。</p>
+<p>这类问题让我更深刻地体会到，前端页面不是“能显示就行”，结构层面的错误同样会造成系统性影响。</p>
+<h2 id="六、这个项目体现了我哪些能力"><a href="#六、这个项目体现了我哪些能力" class="headerlink" title="六、这个项目体现了我哪些能力"></a>六、这个项目体现了我哪些能力</h2><p>如果把这个项目放在求职语境里，我觉得它比较能体现我这几方面的能力：</p>
 <ul>
-<li>重构学习计划生成逻辑，加入新学与复习任务混排</li>
-<li>实现课后练习、AI 出题、答题与批改</li>
-<li>增加错题本页面</li>
+<li>能够独立完成从需求拆解到前后端落地的完整流程</li>
+<li>具备基础的后端接口设计、数据库建模和用户鉴权能力</li>
+<li>能够理解并处理多用户系统中的数据隔离问题</li>
+<li>遇到问题时能定位、排查并修复真实 bug，而不是停留在表面功能展示</li>
+<li>能从“功能很多”转向“产品是否可用”的角度思考项目重构</li>
+</ul>
+<p>对我来说，StudyApp 的价值不只是“做出了一个项目”，而是它完整展示了我从想法到交付的执行能力。</p>
+<h2 id="七、下一步计划"><a href="#七、下一步计划" class="headerlink" title="七、下一步计划"></a>七、下一步计划</h2><p>从当前项目状态看，我接下来还准备继续推进这些能力：</p>
+<ul>
+<li>重构学习计划生成逻辑，支持新学与复习任务混排</li>
+<li>增加 AI 出题、答题、批改等课后练习能力</li>
+<li>实现错题本页面</li>
 <li>完善用户偏好设置</li>
 <li>继续把本地 MVP 闭环打磨完整</li>
 </ul>
-<p>这些功能如果继续补齐，StudyApp 会更接近一个真正可以长期使用的学习平台。</p>
-<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>回头看这个项目，我最满意的不是“做了多少页面”，而是它让我切实体验到了一个项目从产品调整、后端重构、数据隔离，到持续排错和功能迭代的完整过程。</p>
-<p>对我来说，StudyApp 不是“我写了一个页面”，而是“我独立完成了一个能持续演进的全栈项目”。这也是我后面继续学习网络安全和工程实践时，特别重要的一块积累。</p>
+<p>这些功能如果继续补齐，StudyApp 会更接近一个真正能长期使用和持续扩展的学习平台。</p>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>回头看这个项目，我最满意的并不是某一个页面做得多漂亮，而是我真的把一个想法推进成了一个有完整结构的小型系统。</p>
+<p>它让我经历了产品重构、后端改造、登录鉴权、数据隔离、内容管理和持续排错，也让我更明确了自己之后在安全与工程方向继续深入的路径。</p>
+<p>如果之后我再做类似项目，我会继续保留这种方式：不只追求“做出来”，而是尽量让每一个项目都更接近真实使用场景。</p>
 
       
     </div>
     <footer class="article-footer">
-      <a data-url="https://luotianrang.github.io/2026/06/17/studyapp-project-review/" data-id="studyapp-project-review-20260617" data-title="从零独立完成一个学习助手项目：StudyApp 开发复盘" class="article-share-link"><span class="fa fa-share">Share</span></a>
+      <a data-url="https://luotianrang.github.io/2026/06/17/studyapp-project-review/" data-id="studyapp-project-review-20260617" data-title="独立完成 StudyApp：一个从需求重构到多用户隔离的学习助手项目复盘" class="article-share-link"><span class="fa fa-share">Share</span></a>
       
       
       
@@ -240,11 +248,7 @@
       <ul>
         
           <li>
-            <a href="/2026/06/17/studyapp-project-review/">从零独立完成一个学习助手项目：StudyApp 开发复盘</a>
-          </li>
-        
-          <li>
-            <a href="/2026/06/05/hello-world/">Hello World</a>
+            <a href="/2026/06/17/studyapp-project-review/">独立完成 StudyApp：一个从需求重构到多用户隔离的学习助手项目复盘</a>
           </li>
         
       </ul>
